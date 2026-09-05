@@ -51,9 +51,12 @@
   .bl-chip.paid { border: 1px solid var(--brass); background: var(--brass); color: var(--paper); }
   .bl-chip.unpaid { border: 1px solid var(--sage); background: transparent; color: var(--ink); }
   .bl-chip.excluded { border: 1px dashed var(--sage); background: transparent; color: var(--sage); opacity: 0.55; text-decoration: line-through; }
+  .bl-chip .bl-chip-amt { font-weight: 600; }
+  .bl-chip .bl-chip-star { font-weight: 700; }
   .bl-amount-col { text-align: right; flex-shrink: 0; }
   .bl-amount { font-size: 18px; font-weight: 700; }
   .bl-share { font-size: 11px; color: var(--sage); margin-top: 2px; }
+  .bl-share.warn { color: var(--rust); }
   .bl-stamp-btn { margin-top: 10px; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 2px; background: none; letter-spacing: 1px; font-family: inherit; cursor: pointer; display: inline-block; }
   .bl-stamp-btn.paid { border: 2px solid var(--brass); color: var(--brass); transform: rotate(-5deg); }
   .bl-stamp-btn.unpaid { border: 2px solid var(--sage); color: var(--sage); }
@@ -61,11 +64,6 @@
   .bl-input { font-family: inherit; background: var(--paper); border: 1px solid var(--sage); border-radius: 2px; padding: 6px 8px; font-size: 13px; color: var(--ink); }
   .bl-input:focus, button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
   .bl-small-btn { background: none; border: 1px solid var(--sage); border-radius: 2px; padding: 5px 7px; cursor: pointer; color: var(--ink); display: inline-flex; align-items: center; font-family: inherit; }
-  .bl-small-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  .bl-custom-shares { border-top: 1px dashed var(--sage); margin-top: 10px; padding-top: 10px; }
-  .bl-custom-share-row { display: flex; align-items: center; gap: 8px; }
-  .bl-custom-share-row + .bl-custom-share-row { margin-top: 6px; }
-  .bl-share-remaining { font-size: 11px; margin-top: 8px; }
   .bl-primary-btn { background: var(--ink); color: var(--paper); border: none; border-radius: 2px; padding: 8px 16px; font-family: inherit; font-size: 13px; cursor: pointer; }
   .bl-ghost-btn { background: none; color: var(--sage); border: 1px solid var(--sage); border-radius: 2px; padding: 8px 16px; font-family: inherit; font-size: 13px; cursor: pointer; }
   .bl-add-toggle { width: 100%; padding: 14px; border: 1px dashed var(--sage); background: none; color: var(--sage); font-family: inherit; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 2px; }
@@ -75,6 +73,22 @@
   .bl-empty { padding: 40px 0; text-align: center; color: var(--sage); font-size: 13px; }
   .bl-status { font-size: 11px; color: var(--sage); text-align: center; padding: 10px 0 30px; }
   .bl-status.warn { color: var(--rust); }
+
+  /* split editor */
+  .bl-split-editor { margin-top: 14px; border-top: 1px dashed var(--sage); padding-top: 12px; }
+  .bl-mode-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+  .bl-mode-btn { flex: 1; padding: 7px 8px; border: 1px solid var(--sage); background: none; font-family: inherit; font-size: 12px; cursor: pointer; color: var(--ink); border-radius: 2px; }
+  .bl-mode-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .bl-person-line { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px dotted var(--paper-2); }
+  .bl-person-line label { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; cursor: pointer; font-size: 13px; }
+  .bl-person-line input[type="checkbox"] { accent-color: var(--brass); width: 15px; height: 15px; flex-shrink: 0; }
+  .bl-person-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bl-amt-input { width: 78px; flex-shrink: 0; }
+  .bl-person-owe { font-size: 12px; color: var(--sage); min-width: 62px; text-align: right; flex-shrink: 0; }
+  .bl-preview { margin-top: 12px; font-size: 12px; color: var(--sage); line-height: 1.5; }
+  .bl-preview.warn { color: var(--rust); }
+  .bl-editor-hint { font-size: 11px; color: var(--sage); margin-bottom: 8px; }
+
   @media (max-width: 520px) {
     .bl-container { padding: 0 16px; }
     .bl-row-inner { flex-direction: column; }
@@ -128,30 +142,14 @@ const DATA_PATH = "billLedger";
 const DEFAULT_STATE = {
   people: ["P1", "P2", "P3", "P4"],
   bills: [
-    { id: "b1", date: "2026-08-08", name: "Internet", total: 79, vendorPaid: true, participants: [true, true, true, true], personPaid: [true, true, true, false] },
-    { id: "b2", date: "2026-08-24", name: "Electricity", total: 585.33, vendorPaid: false, participants: [true, true, true, true], personPaid: [false, false, false, false] },
-    { id: "b3", date: "", name: "Gas", total: 0, vendorPaid: false, participants: [true, true, true, true], personPaid: [false, false, false, false] }
+    { id: "b1", date: "2026-08-08", name: "Internet", total: 79, vendorPaid: true, participants: [true, true, true, true], personPaid: [true, true, true, false], custom: [null, null, null, null] },
+    { id: "b2", date: "2026-08-24", name: "Electricity", total: 585.33, vendorPaid: false, participants: [true, true, true, true], personPaid: [false, false, false, false], custom: [null, null, null, null] },
+    { id: "b3", date: "", name: "Gas", total: 0, vendorPaid: false, participants: [true, true, true, true], personPaid: [false, false, false, false], custom: [null, null, null, null] }
   ]
 };
 
 let state = null;
-let ui = {
-  editingBillId: null,
-  editingPersonIdx: null,
-  showAddForm: false,
-  formError: "",
-  connected: false,
-  usingFallback: false,
-  // Add-bill form draft state (preserved across re-renders when toggling split mode)
-  addDraft: null,
-  addSplitMode: "equal",
-  addShares: null,
-  // Edit-bill form draft state
-  editDraft: null,
-  editSplitMode: null,
-  editShares: null,
-  editFormError: ""
-};
+let ui = { draft: null, editingPersonIdx: null, formError: "", connected: false, usingFallback: false };
 
 function genId() {
   return "b-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
@@ -169,52 +167,127 @@ function fmtDate(d) {
   return dt.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
 }
 
-function shareOf(bill) {
-  const count = getParticipants(bill).filter(Boolean).length;
-  return count ? bill.total / count : 0;
-}
-
 function getParticipants(bill) {
   return Array.isArray(bill.participants) ? bill.participants : bill.personPaid.map(() => true);
 }
 
-function getSplitMode(bill) {
-  return bill.splitMode === "custom" ? "custom" : "equal";
-}
-
-// The dollar amount a specific person owes on a bill, accounting for
-// custom (uneven) splits. Returns 0 if they aren't part of the bill.
-function personShare(bill, i) {
-  const participants = getParticipants(bill);
-  if (!participants[i]) return 0;
-  if (getSplitMode(bill) === "custom" && Array.isArray(bill.shares)) {
-    return Number(bill.shares[i]) || 0;
+/* Normalizes a bill's per-person custom amounts to the new model:
+   an array where each entry is either a fixed dollar amount that
+   person pays, or null meaning "split the remainder evenly".
+   - New format: bill.custom already holds that array.
+   - Old master format: bill.splitMode === "custom" + bill.shares
+     (absolute per-person amounts) is converted into custom amounts.
+   - Everything else (plain even split) becomes all-null. */
+function getCustom(bill) {
+  if (Array.isArray(bill.custom)) {
+    return bill.custom.map((c) => (typeof c === "number" && !isNaN(c) ? c : null));
   }
-  const count = participants.filter(Boolean).length;
-  return count ? bill.total / count : 0;
+  if (bill.splitMode === "custom" && Array.isArray(bill.shares)) {
+    const participants = getParticipants(bill);
+    return bill.shares.map((s, i) => (participants[i] && typeof s === "number" ? s : null));
+  }
+  return (bill.personPaid || []).map(() => null);
 }
 
-// Suggests an even split of `total` across `count` people, distributing
-// leftover cents so the amounts always add up exactly to the total.
-function suggestEqualShares(total, count) {
-  if (!count) return [];
-  const cents = Math.round((Number(total) || 0) * 100);
-  const base = Math.floor(cents / count);
-  const remainder = cents - base * count;
-  return Array.from({ length: count }, (_, i) => (base + (i < remainder ? 1 : 0)) / 100);
+/* Given a bill, work out how much each person owes. People with a
+   custom amount pay exactly that; everyone else included splits the
+   remainder of the bill evenly among themselves. */
+function computeShares(bill) {
+  const participants = getParticipants(bill);
+  const custom = getCustom(bill);
+  const n = participants.length;
+  const amounts = new Array(n).fill(0);
+  let customSum = 0;
+  const splitIdx = [];
+  for (let i = 0; i < n; i++) {
+    if (!participants[i]) continue;
+    const c = custom[i];
+    if (typeof c === "number" && !isNaN(c)) {
+      amounts[i] = c;
+      customSum += c;
+    } else {
+      splitIdx.push(i);
+    }
+  }
+  const remainder = (Number(bill.total) || 0) - customSum;
+  const per = splitIdx.length ? remainder / splitIdx.length : 0;
+  splitIdx.forEach((i) => (amounts[i] = per));
+  const customCount = participants.filter((p, i) => p && typeof custom[i] === "number").length;
+  const over = remainder < -0.005;
+  const mismatch = splitIdx.length === 0 && Math.abs(remainder) > 0.005;
+  return { amounts, per, splitCount: splitIdx.length, customCount, customSum, remainder, over, mismatch };
 }
 
 function computeTotals() {
-  const totalDue = state.bills.filter((b) => !b.vendorPaid).reduce((s, b) => s + b.total, 0);
+  const totalDue = state.bills.filter((b) => !b.vendorPaid).reduce((s, b) => s + (Number(b.total) || 0), 0);
   const dueToReceive = state.bills.reduce((sum, b) => {
+    const { amounts } = computeShares(b);
     const participants = getParticipants(b);
-    let billSum = 0;
-    participants.forEach((included, i) => {
-      if (included && !b.personPaid[i]) billSum += personShare(b, i);
+    let s = 0;
+    participants.forEach((inc, i) => {
+      if (inc && !b.personPaid[i]) s += amounts[i];
     });
-    return sum + billSum;
+    return sum + s;
   }, 0);
   return { totalDue, dueToReceive };
+}
+
+/* ---------- draft (add / edit editor) helpers ---------- */
+
+function newAddDraft() {
+  return {
+    billId: null,
+    date: "",
+    name: "",
+    total: "",
+    mode: "auto",
+    include: state.people.map(() => true),
+    amounts: state.people.map(() => "")
+  };
+}
+
+function billToDraft(b) {
+  const participants = getParticipants(b);
+  const custom = getCustom(b);
+  const hasCustom = custom.some((c, i) => participants[i] && typeof c === "number");
+  return {
+    billId: b.id,
+    date: b.date || "",
+    name: b.name || "",
+    total: String(b.total),
+    mode: hasCustom ? "custom" : "auto",
+    include: participants.slice(),
+    amounts: custom.map((c) => (typeof c === "number" ? String(c) : ""))
+  };
+}
+
+/* Compute the live breakdown from an in-progress draft. */
+function draftToShares(d) {
+  const total = parseFloat(d.total);
+  const t = isNaN(total) ? 0 : total;
+  const n = d.include.length;
+  const amounts = new Array(n).fill(0);
+  let customSum = 0;
+  const splitIdx = [];
+  for (let i = 0; i < n; i++) {
+    if (!d.include[i]) continue;
+    if (d.mode === "custom") {
+      const raw = d.amounts[i];
+      const v = parseFloat(raw);
+      if (raw !== "" && raw != null && !isNaN(v)) {
+        amounts[i] = v;
+        customSum += v;
+        continue;
+      }
+    }
+    splitIdx.push(i);
+  }
+  const remainder = t - customSum;
+  const per = splitIdx.length ? remainder / splitIdx.length : 0;
+  splitIdx.forEach((i) => (amounts[i] = per));
+  const over = remainder < -0.005;
+  const mismatch = splitIdx.length === 0 && Math.abs(remainder) > 0.005;
+  return { amounts, per, splitCount: splitIdx.length, customSum, remainder, over, mismatch, total: t };
 }
 
 /* ---------- persistence layer ---------- */
@@ -293,11 +366,9 @@ function addPerson() {
     people: [...state.people, "P" + (state.people.length + 1)],
     bills: state.bills.map((b) => ({
       ...b,
-      // A newly added person isn't part of an existing custom split until
-      // someone assigns them an amount; equal splits include everyone.
-      participants: [...getParticipants(b), getSplitMode(b) === "custom" ? false : true],
+      participants: [...getParticipants(b), true],
       personPaid: [...b.personPaid, false],
-      shares: [...(Array.isArray(b.shares) ? b.shares : state.people.map(() => 0)), 0]
+      custom: [...getCustom(b), null]
     }))
   });
 }
@@ -310,7 +381,7 @@ function removePerson() {
       ...b,
       participants: getParticipants(b).slice(0, -1),
       personPaid: b.personPaid.slice(0, -1),
-      shares: (Array.isArray(b.shares) ? b.shares : state.people.map(() => 0)).slice(0, -1)
+      custom: getCustom(b).slice(0, -1)
     }))
   });
 }
@@ -331,13 +402,7 @@ function cyclePersonState(billId, idx) {
       if (b.id !== billId) return b;
       const participants = getParticipants(b).slice();
       const personPaid = b.personPaid.slice();
-      if (getSplitMode(b) === "custom") {
-        // Inclusion/amount for custom splits is set via the edit form.
-        // A tap here just marks their fixed share paid or unpaid.
-        if (!participants[idx]) return b;
-        personPaid[idx] = !personPaid[idx];
-        return { ...b, personPaid };
-      }
+      const custom = getCustom(b).slice();
       if (!participants[idx]) {
         // not part of this bill -> include, unpaid
         participants[idx] = true;
@@ -346,11 +411,16 @@ function cyclePersonState(billId, idx) {
         // included, unpaid -> included, paid
         personPaid[idx] = true;
       } else {
-        // included, paid -> exclude from this bill
+        // included, paid -> exclude from this bill (drop any custom amount)
         participants[idx] = false;
         personPaid[idx] = false;
+        custom[idx] = null;
       }
-      return { ...b, participants, personPaid };
+      // normalize away legacy fields so the bill uses the new model
+      const next = { ...b, participants, personPaid, custom };
+      delete next.splitMode;
+      delete next.shares;
+      return next;
     })
   });
 }
@@ -366,96 +436,75 @@ function deleteBill(billId) {
   pushState({ ...state, bills: state.bills.filter((b) => b.id !== billId) });
 }
 
-function addBill(date, name, totalRaw, splitMode, sharesRaw) {
-  const total = parseFloat(totalRaw);
-  if (!name.trim() || isNaN(total) || total < 0) {
+/* Save whichever draft is open (add when billId is null, otherwise edit). */
+function commitDraft() {
+  const d = ui.draft;
+  if (!d) return;
+  const total = parseFloat(d.total);
+  if (!d.name.trim() || isNaN(total) || total < 0) {
     ui.formError = "Enter a bill name and a valid amount.";
     render();
     return;
   }
-
-  let shares = state.people.map(() => 0);
-  let participants = state.people.map(() => true);
-
-  if (splitMode === "custom") {
-    shares = state.people.map((_, i) => parseFloat(sharesRaw[i]) || 0);
-    const sum = shares.reduce((a, s) => a + s, 0);
-    if (Math.abs(sum - total) > 0.01) {
-      ui.formError = `Custom amounts add up to ${fmt(sum)}, but the bill total is ${fmt(total)}. Adjust the amounts so they match.`;
-      ui.addShares = sharesRaw;
-      render();
-      return;
-    }
-    participants = shares.map((s) => s > 0);
+  const res = draftToShares(d);
+  if (!d.include.some(Boolean)) {
+    ui.formError = "Pick at least one person for this bill.";
+    render();
+    return;
   }
-
+  if (res.over) {
+    ui.formError = "Custom amounts add up to more than the bill total.";
+    render();
+    return;
+  }
+  if (res.mismatch) {
+    ui.formError = "Custom amounts must add up to the total, or leave someone to split the rest.";
+    render();
+    return;
+  }
   ui.formError = "";
-  ui.showAddForm = false;
-  ui.addDraft = null;
-  ui.addSplitMode = "equal";
-  ui.addShares = null;
-  pushState({
-    ...state,
-    bills: [
-      ...state.bills,
-      {
-        id: genId(),
-        date,
-        name: name.trim(),
-        total,
-        vendorPaid: false,
-        splitMode: splitMode === "custom" ? "custom" : "equal",
-        participants,
-        personPaid: state.people.map(() => false),
-        shares
-      }
-    ]
+
+  const custom = d.include.map((inc, i) => {
+    if (!inc || d.mode !== "custom") return null;
+    const raw = d.amounts[i];
+    const v = parseFloat(raw);
+    return raw !== "" && raw != null && !isNaN(v) ? v : null;
   });
-}
+  const participants = d.include.slice();
 
-function saveEdit(id, date, name, totalRaw, splitMode, sharesRaw) {
-  const bill = state.bills.find((b) => b.id === id);
-  if (!bill) return;
-  const total = parseFloat(totalRaw);
-  const finalTotal = isNaN(total) ? bill.total : total;
-
-  let shares = Array.isArray(bill.shares) ? bill.shares : state.people.map(() => 0);
-  let participants = getParticipants(bill);
-
-  if (splitMode === "custom") {
-    shares = state.people.map((_, i) => parseFloat(sharesRaw[i]) || 0);
-    const sum = shares.reduce((a, s) => a + s, 0);
-    if (Math.abs(sum - finalTotal) > 0.01) {
-      ui.editFormError = `Custom amounts add up to ${fmt(sum)}, but the bill total is ${fmt(finalTotal)}. Adjust the amounts so they match.`;
-      ui.editShares = sharesRaw;
-      ui.editSplitMode = "custom";
-      render();
-      return;
-    }
-    participants = shares.map((s) => s > 0);
+  if (d.billId == null) {
+    pushState({
+      ...state,
+      bills: [
+        ...state.bills,
+        {
+          id: genId(),
+          date: d.date,
+          name: d.name.trim(),
+          total,
+          vendorPaid: false,
+          participants,
+          personPaid: state.people.map(() => false),
+          custom
+        }
+      ]
+    });
+  } else {
+    pushState({
+      ...state,
+      bills: state.bills.map((b) => {
+        if (b.id !== d.billId) return b;
+        const prevPaid = b.personPaid || [];
+        const personPaid = participants.map((inc, i) => (inc ? !!prevPaid[i] : false));
+        // normalize away legacy fields so the bill uses the new model
+        const next = { ...b, date: d.date, name: d.name.trim() || b.name, total, participants, personPaid, custom };
+        delete next.splitMode;
+        delete next.shares;
+        return next;
+      })
+    });
   }
-
-  pushState({
-    ...state,
-    bills: state.bills.map((b) =>
-      b.id === id
-        ? {
-            ...b,
-            date,
-            name: name.trim() || b.name,
-            total: finalTotal,
-            splitMode: splitMode === "custom" ? "custom" : "equal",
-            participants,
-            shares
-          }
-        : b
-    )
-  });
-  ui.editingBillId = null;
-  ui.editDraft = null;
-  ui.editSplitMode = null;
-  ui.editShares = null;
-  ui.editFormError = "";
+  ui.draft = null;
 }
 
 /* ---------- rendering ---------- */
@@ -496,7 +545,7 @@ function render() {
     </div>
 
     <div class="bl-container" style="padding-bottom:16px; padding-top:8px;">
-      ${ui.showAddForm ? renderAddForm() : '<button class="bl-add-toggle" data-action="show-add-form">+ Add a bill</button>'}
+      ${ui.draft && ui.draft.billId == null ? renderAddForm() : '<button class="bl-add-toggle" data-action="show-add-form">+ Add a bill</button>'}
     </div>
 
     <div class="bl-status ${ui.usingFallback ? "warn" : ""}">
@@ -515,44 +564,28 @@ function renderPersonChip(p, i) {
 }
 
 function renderBillRow(b, idx) {
-  const share = shareOf(b);
-  const mode = getSplitMode(b);
-  const participants = getParticipants(b);
-  const participantCount = participants.filter(Boolean).length;
-  if (ui.editingBillId === b.id) {
-    const draft = ui.editDraft || { date: b.date, name: b.name, total: String(b.total) };
-    const mode = ui.editSplitMode || getSplitMode(b);
-    const shares =
-      ui.editShares ||
-      (getSplitMode(b) === "custom" && Array.isArray(b.shares)
-        ? b.shares.map(String)
-        : suggestEqualShares(parseFloat(draft.total) || b.total, state.people.length).map(String));
-    return `
-      <div class="bl-row">
-        <div class="bl-row-inner">
-          <div class="bl-idx">${String(idx + 1).padStart(3, "0")}</div>
-          <div class="bl-bill-main">
-            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-              <input type="date" class="bl-input" id="edit-date-${b.id}" value="${escapeAttr(draft.date)}" />
-              <input type="text" class="bl-input" id="edit-name-${b.id}" value="${escapeAttr(draft.name)}" style="flex:1; min-width:120px;" placeholder="Bill name" />
-              <input type="number" step="0.01" class="bl-input" id="edit-total-${b.id}" value="${escapeAttr(draft.total)}" style="width:90px;" placeholder="0.00" />
-            </div>
-            <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-              <span style="font-size:12px; color:var(--sage);">Split</span>
-              <button type="button" class="bl-small-btn ${mode === "equal" ? "active" : ""}" data-action="set-edit-split-mode" data-bill-id="${b.id}" data-mode="equal">Equal</button>
-              <button type="button" class="bl-small-btn ${mode === "custom" ? "active" : ""}" data-action="set-edit-split-mode" data-bill-id="${b.id}" data-mode="custom">Custom amounts</button>
-            </div>
-            ${mode === "custom" ? renderCustomShareInputs(`edit-share-${b.id}`, state.people, shares) : ""}
-            ${ui.editFormError ? `<div class="bl-form-error">${escapeHtml(ui.editFormError)}</div>` : ""}
-            <div style="display:flex; gap:8px; margin-top:12px;">
-              <button class="bl-small-btn" data-action="save-edit" data-bill-id="${b.id}">✓ Save</button>
-              <button class="bl-small-btn" data-action="cancel-edit">&times; Cancel</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+  if (ui.draft && ui.draft.billId === b.id) {
+    return renderEditRow(b, idx);
   }
+  const { amounts, per, splitCount, customCount, over, mismatch } = computeShares(b);
+  const participants = getParticipants(b);
+  const custom = getCustom(b);
+  const participantCount = participants.filter(Boolean).length;
+
+  let shareText;
+  if (splitCount > 0) {
+    shareText = `${fmt(per)} / split`;
+    if (customCount > 0) shareText += ` · ${customCount} custom`;
+  } else {
+    shareText = "all custom";
+  }
+  if (participantCount !== state.people.length) {
+    shareText += ` · ${participantCount} of ${state.people.length}`;
+  }
+  const warn = over || mismatch;
+  if (over) shareText = "custom amounts exceed total";
+  else if (mismatch) shareText = "custom amounts don't match total";
+
   return `
     <div class="bl-row">
       <div class="bl-row-inner">
@@ -561,27 +594,23 @@ function renderBillRow(b, idx) {
           <div class="bl-bill-title-row">
             <span class="bl-serif bl-bill-name">${escapeHtml(b.name)}</span>
             <span class="bl-bill-date">${fmtDate(b.date)}</span>
-            <button class="bl-icon-ghost" data-action="start-edit" data-bill-id="${b.id}" title="Edit bill">✎</button>
+            <button class="bl-icon-ghost" data-action="start-edit" data-bill-id="${b.id}" title="Edit bill & split">✎</button>
           </div>
           <div class="bl-chips">
             ${state.people
               .map((p, i) => {
                 const included = participants[i];
                 const paid = b.personPaid[i];
+                const isCustom = included && typeof custom[i] === "number";
                 const cls = !included ? "excluded" : paid ? "paid" : "unpaid";
                 const label = !included ? "− " : paid ? "✓ " : "";
-                const amountLabel = mode === "custom" && included ? ` ${fmt(personShare(b, i))}` : "";
-                let title;
-                if (!included) {
-                  title = mode === "custom" ? `${p} is not part of this bill — edit the bill to give them a share` : `${p} is not part of this bill — click to include`;
-                } else if (mode === "custom") {
-                  title = `${p} owes ${fmt(personShare(b, i))} and has ${paid ? "paid" : "not paid"} — click to mark ${paid ? "unpaid" : "paid"}`;
-                } else {
-                  title = `${p} has ${paid ? "paid" : "not paid"} their share — click to ${paid ? "leave out of this bill" : "mark paid"}`;
-                }
+                const amtText = included ? `<span class="bl-chip-amt"> · ${fmt(amounts[i])}${isCustom ? '<span class="bl-chip-star">*</span>' : ""}</span>` : "";
+                const title = !included
+                  ? `${p} is not part of this bill — click to include`
+                  : `${p} owes ${fmt(amounts[i])}${isCustom ? " (set amount)" : " (even split)"} and has ${paid ? "paid" : "not paid"} — click to ${paid ? "leave out of this bill" : "mark paid"}`;
                 return `
               <button class="bl-chip ${cls}" data-action="toggle-person" data-bill-id="${b.id}" data-person-idx="${i}" title="${escapeAttr(title)}">
-                ${label}${escapeHtml(p)}${amountLabel}
+                ${label}${escapeHtml(p)}${amtText}
               </button>`;
               })
               .join("")}
@@ -589,11 +618,7 @@ function renderBillRow(b, idx) {
         </div>
         <div class="bl-amount-col">
           <div class="bl-serif bl-amount">${fmt(b.total)}</div>
-          <div class="bl-share">${
-            mode === "custom"
-              ? `custom split · ${participantCount} of ${state.people.length}`
-              : `${fmt(share)} / person${participantCount !== state.people.length ? ` · ${participantCount} of ${state.people.length}` : ""}`
-          }</div>
+          <div class="bl-share${warn ? " warn" : ""}">${shareText}</div>
           <button class="bl-stamp-btn ${b.vendorPaid ? "paid" : "unpaid"}" data-action="toggle-vendor" data-bill-id="${b.id}">${b.vendorPaid ? "PAID" : "UNPAID"}</button>
           <button class="bl-delete-btn" data-action="delete-bill" data-bill-id="${b.id}" title="Delete bill">🗑</button>
         </div>
@@ -602,83 +627,94 @@ function renderBillRow(b, idx) {
   `;
 }
 
-function renderAddForm() {
-  const draft = ui.addDraft || { date: "", name: "", total: "" };
-  const mode = ui.addSplitMode || "equal";
-  const shares = ui.addShares || suggestEqualShares(parseFloat(draft.total) || 0, state.people.length).map(String);
+function renderEditRow(b, idx) {
+  const d = ui.draft;
   return `
-    <form class="bl-add-form" id="add-bill-form">
-      <div class="bl-add-form-row">
-        <input type="date" class="bl-input" id="new-bill-date" value="${escapeAttr(draft.date)}" />
-        <input type="text" class="bl-input" id="new-bill-name" placeholder="Bill name" style="flex:1; min-width:140px;" value="${escapeAttr(draft.name)}" required />
-        <input type="number" step="0.01" min="0" class="bl-input" id="new-bill-total" placeholder="0.00" style="width:100px;" value="${escapeAttr(draft.total)}" required />
+    <div class="bl-row">
+      <div class="bl-row-inner">
+        <div class="bl-idx">${String(idx + 1).padStart(3, "0")}</div>
+        <div class="bl-bill-main">
+          <form id="draft-form">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <input type="date" class="bl-input" id="draft-date" value="${escapeAttr(d.date)}" />
+              <input type="text" class="bl-input" id="draft-name" value="${escapeAttr(d.name)}" style="flex:1; min-width:120px;" placeholder="Bill name" />
+              <input type="number" step="0.01" class="bl-input" id="draft-total" value="${escapeAttr(d.total)}" style="width:90px;" placeholder="0.00" />
+            </div>
+            ${renderSplitEditor(d)}
+            ${ui.formError ? `<div class="bl-form-error">${escapeHtml(ui.formError)}</div>` : ""}
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button type="submit" class="bl-primary-btn">Save</button>
+              <button type="button" class="bl-ghost-btn" data-action="cancel-draft">Cancel</button>
+            </div>
+          </form>
+        </div>
       </div>
-      <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-        <span style="font-size:12px; color:var(--sage);">Split</span>
-        <button type="button" class="bl-small-btn ${mode === "equal" ? "active" : ""}" data-action="set-add-split-mode" data-mode="equal">Equal</button>
-        <button type="button" class="bl-small-btn ${mode === "custom" ? "active" : ""}" data-action="set-add-split-mode" data-mode="custom">Custom amounts</button>
-      </div>
-      ${mode === "custom" ? renderCustomShareInputs("new-share", state.people, shares) : ""}
-      ${ui.formError ? `<div class="bl-form-error">${escapeHtml(ui.formError)}</div>` : ""}
-      <div style="display:flex; gap:8px; margin-top:12px;">
-        <button type="submit" class="bl-primary-btn">Add bill</button>
-        <button type="button" class="bl-ghost-btn" data-action="cancel-add-form">Cancel</button>
-      </div>
-    </form>
-  `;
-}
-
-// Renders one number input per person for a custom split, plus a live
-// "assigned so far" readout. `prefix` must be unique per form instance
-// (e.g. "new-share" or "edit-share-<billId>") since input ids use it.
-function renderCustomShareInputs(prefix, people, shares) {
-  return `
-    <div class="bl-custom-shares" id="${prefix}-wrap">
-      ${people
-        .map(
-          (p, i) => `
-        <div class="bl-custom-share-row">
-          <span style="font-size:13px; flex:1;">${escapeHtml(p)}</span>
-          <input type="number" step="0.01" min="0" class="bl-input" style="width:90px;" id="${prefix}-${i}" data-share-idx="${i}" value="${escapeAttr(shares[i] ?? "")}" placeholder="0.00" />
-        </div>`
-        )
-        .join("")}
-      <div class="bl-share-remaining" id="${prefix}-remaining"></div>
     </div>
   `;
 }
 
-// Wires up live "assigned so far / remaining" feedback for a set of custom
-// share inputs, without triggering a full re-render on every keystroke
-// (which would otherwise steal focus from the field being edited).
-function wireShareInputs(prefix, totalInputId) {
-  const wrap = document.getElementById(`${prefix}-wrap`);
-  const totalEl = document.getElementById(totalInputId);
-  const remainingEl = document.getElementById(`${prefix}-remaining`);
-  if (!wrap || !remainingEl) return;
+function renderSplitEditor(d) {
+  const res = draftToShares(d);
+  return `
+    <div class="bl-split-editor">
+      <div class="bl-mode-toggle">
+        <button type="button" class="bl-mode-btn ${d.mode === "auto" ? "active" : ""}" data-action="draft-mode" data-mode="auto">Even split</button>
+        <button type="button" class="bl-mode-btn ${d.mode === "custom" ? "active" : ""}" data-action="draft-mode" data-mode="custom">Custom amounts</button>
+      </div>
+      <div class="bl-editor-hint">
+        ${d.mode === "auto"
+          ? "Everyone ticked splits the bill evenly."
+          : "Type an amount for anyone paying a set share. Leave it blank to split whatever's left evenly."}
+      </div>
+      ${state.people
+        .map((p, i) => {
+          const inc = d.include[i];
+          const amtInput =
+            d.mode === "custom"
+              ? `<input type="number" step="0.01" min="0" class="bl-input bl-amt-input" id="amt-${i}" data-idx="${i}" value="${escapeAttr(d.amounts[i] || "")}" placeholder="split" ${inc ? "" : "disabled"} />`
+              : "";
+          return `
+        <div class="bl-person-line">
+          <label><input type="checkbox" data-action="draft-include" data-idx="${i}" ${inc ? "checked" : ""} /> <span class="bl-person-name">${escapeHtml(p)}</span></label>
+          ${amtInput}
+          <span class="bl-person-owe" id="owe-${i}">${inc ? fmt(res.amounts[i]) : "—"}</span>
+        </div>`;
+        })
+        .join("")}
+      <div class="bl-preview${res.over || res.mismatch ? " warn" : ""}" id="editor-preview">${escapeHtml(editorPreviewText(res))}</div>
+    </div>
+  `;
+}
 
-  const update = () => {
-    const total = parseFloat(totalEl?.value) || 0;
-    let sum = 0;
-    wrap.querySelectorAll("input[data-share-idx]").forEach((inp) => {
-      sum += parseFloat(inp.value) || 0;
-    });
-    const remaining = Math.round((total - sum) * 100) / 100;
-    if (Math.abs(remaining) < 0.005) {
-      remainingEl.textContent = `Assigned ${fmt(sum)} of ${fmt(total)} — balanced ✓`;
-      remainingEl.style.color = "var(--sage)";
-    } else if (remaining > 0) {
-      remainingEl.textContent = `Assigned ${fmt(sum)} of ${fmt(total)} — ${fmt(remaining)} left to assign`;
-      remainingEl.style.color = "var(--rust)";
-    } else {
-      remainingEl.textContent = `Assigned ${fmt(sum)} of ${fmt(total)} — ${fmt(Math.abs(remaining))} over the total`;
-      remainingEl.style.color = "var(--rust)";
-    }
-  };
+function editorPreviewText(res) {
+  if (res.over) return "Custom amounts exceed the bill total by " + fmt(-res.remainder) + ".";
+  if (res.mismatch)
+    return "Custom amounts total " + fmt(res.customSum) + " of " + fmt(res.total) + " — assign the rest or let someone split it.";
+  if (res.splitCount > 0) {
+    return res.customSum > 0
+      ? "Even split: " + fmt(res.per) + " each for " + res.splitCount + " · custom total " + fmt(res.customSum)
+      : "Even split: " + fmt(res.per) + " each for " + res.splitCount + ".";
+  }
+  return "All set by hand — totals " + fmt(res.customSum) + ".";
+}
 
-  wrap.querySelectorAll("input[data-share-idx]").forEach((inp) => inp.addEventListener("input", update));
-  if (totalEl) totalEl.addEventListener("input", update);
-  update();
+function renderAddForm() {
+  const d = ui.draft;
+  return `
+    <form class="bl-add-form" id="draft-form">
+      <div class="bl-add-form-row">
+        <input type="date" class="bl-input" id="draft-date" value="${escapeAttr(d.date)}" />
+        <input type="text" class="bl-input" id="draft-name" placeholder="Bill name" style="flex:1; min-width:140px;" value="${escapeAttr(d.name)}" />
+        <input type="number" step="0.01" min="0" class="bl-input" id="draft-total" placeholder="0.00" style="width:100px;" value="${escapeAttr(d.total)}" />
+      </div>
+      ${renderSplitEditor(d)}
+      ${ui.formError ? `<div class="bl-form-error">${escapeHtml(ui.formError)}</div>` : ""}
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button type="submit" class="bl-primary-btn">Add bill</button>
+        <button type="button" class="bl-ghost-btn" data-action="cancel-draft">Cancel</button>
+      </div>
+    </form>
+  `;
 }
 
 function escapeHtml(s) {
@@ -686,6 +722,23 @@ function escapeHtml(s) {
 }
 function escapeAttr(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* Live-update the owed amounts and preview text without a full
+   re-render, so text inputs keep focus while typing. */
+function refreshEditor() {
+  const d = ui.draft;
+  if (!d) return;
+  const res = draftToShares(d);
+  d.include.forEach((inc, i) => {
+    const span = document.getElementById("owe-" + i);
+    if (span) span.textContent = inc ? fmt(res.amounts[i]) : "—";
+  });
+  const prev = document.getElementById("editor-preview");
+  if (prev) {
+    prev.className = "bl-preview" + (res.over || res.mismatch ? " warn" : "");
+    prev.textContent = editorPreviewText(res);
+  }
 }
 
 /* ---------- event wiring ---------- */
@@ -715,81 +768,30 @@ function attachHandlers() {
       else if (action === "delete-bill") {
         if (confirm("Delete this bill?")) deleteBill(billId);
       } else if (action === "start-edit") {
-        const bill = state.bills.find((x) => x.id === billId);
-        ui.editingBillId = billId;
-        ui.editDraft = { date: bill.date, name: bill.name, total: String(bill.total) };
-        ui.editSplitMode = getSplitMode(bill);
-        ui.editShares = getSplitMode(bill) === "custom" && Array.isArray(bill.shares) ? bill.shares.map(String) : null;
-        ui.editFormError = "";
-        render();
-      } else if (action === "cancel-edit") {
-        ui.editingBillId = null;
-        ui.editDraft = null;
-        ui.editSplitMode = null;
-        ui.editShares = null;
-        ui.editFormError = "";
-        render();
-      } else if (action === "save-edit") {
-        const date = document.getElementById("edit-date-" + billId).value;
-        const name = document.getElementById("edit-name-" + billId).value;
-        const total = document.getElementById("edit-total-" + billId).value;
-        const mode = ui.editSplitMode || getSplitMode(state.bills.find((x) => x.id === billId));
-        const sharesRaw = mode === "custom" ? state.people.map((_, i) => document.getElementById(`edit-share-${billId}-${i}`)?.value || "0") : null;
-        saveEdit(billId, date, name, total, mode, sharesRaw);
-      } else if (action === "set-edit-split-mode") {
-        const mode = el.getAttribute("data-mode");
-        ui.editDraft = {
-          date: document.getElementById("edit-date-" + billId)?.value || "",
-          name: document.getElementById("edit-name-" + billId)?.value || "",
-          total: document.getElementById("edit-total-" + billId)?.value || ""
-        };
-        if (mode === "custom") {
-          const bill = state.bills.find((x) => x.id === billId);
-          const existing = state.people.map((_, i) => document.getElementById(`edit-share-${billId}-${i}`)?.value);
-          if (existing.some((v) => v)) {
-            ui.editShares = existing;
-          } else if (bill && getSplitMode(bill) === "custom" && Array.isArray(bill.shares)) {
-            ui.editShares = bill.shares.map(String);
-          } else {
-            const totalVal = parseFloat(ui.editDraft.total) || (bill ? bill.total : 0);
-            ui.editShares = suggestEqualShares(totalVal, state.people.length).map(String);
-          }
-        } else {
-          ui.editShares = null;
+        const bill = state.bills.find((b) => b.id === billId);
+        if (bill) {
+          ui.draft = billToDraft(bill);
+          ui.formError = "";
+          render();
         }
-        ui.editSplitMode = mode;
-        ui.editFormError = "";
-        render();
       } else if (action === "show-add-form") {
-        ui.showAddForm = true;
+        ui.draft = newAddDraft();
         ui.formError = "";
-        ui.addDraft = { date: "", name: "", total: "" };
-        ui.addSplitMode = "equal";
-        ui.addShares = null;
         render();
-      } else if (action === "cancel-add-form") {
-        ui.showAddForm = false;
+      } else if (action === "cancel-draft") {
+        ui.draft = null;
         ui.formError = "";
-        ui.addDraft = null;
-        ui.addSplitMode = "equal";
-        ui.addShares = null;
         render();
-      } else if (action === "set-add-split-mode") {
-        const mode = el.getAttribute("data-mode");
-        ui.addDraft = {
-          date: document.getElementById("new-bill-date")?.value || "",
-          name: document.getElementById("new-bill-name")?.value || "",
-          total: document.getElementById("new-bill-total")?.value || ""
-        };
-        if (mode === "custom") {
-          const existing = state.people.map((_, i) => document.getElementById("new-share-" + i)?.value);
-          ui.addShares = existing.some((v) => v) ? existing : suggestEqualShares(parseFloat(ui.addDraft.total) || 0, state.people.length).map(String);
-        } else {
-          ui.addShares = null;
+      } else if (action === "draft-mode") {
+        if (ui.draft) {
+          ui.draft.mode = el.getAttribute("data-mode");
+          render();
         }
-        ui.addSplitMode = mode;
-        ui.formError = "";
-        render();
+      } else if (action === "draft-include") {
+        if (ui.draft) {
+          ui.draft.include[Number(idx)] = el.checked;
+          render();
+        }
       }
     });
   });
@@ -816,24 +818,31 @@ function attachHandlers() {
     }
   });
 
-  const addForm = document.getElementById("add-bill-form");
-  if (addForm) {
-    addForm.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const date = document.getElementById("new-bill-date").value;
-      const name = document.getElementById("new-bill-name").value;
-      const total = document.getElementById("new-bill-total").value;
-      const mode = ui.addSplitMode || "equal";
-      const sharesRaw = mode === "custom" ? state.people.map((_, i) => document.getElementById("new-share-" + i)?.value || "0") : null;
-      addBill(date, name, total, mode, sharesRaw);
+  const draftForm = document.getElementById("draft-form");
+  if (draftForm && ui.draft) {
+    const d = ui.draft;
+    const dDate = document.getElementById("draft-date");
+    if (dDate) dDate.addEventListener("input", (e) => (d.date = e.target.value));
+    const dName = document.getElementById("draft-name");
+    if (dName) dName.addEventListener("input", (e) => (d.name = e.target.value));
+    const dTotal = document.getElementById("draft-total");
+    if (dTotal)
+      dTotal.addEventListener("input", (e) => {
+        d.total = e.target.value;
+        refreshEditor();
+      });
+    d.include.forEach((_, i) => {
+      const amt = document.getElementById("amt-" + i);
+      if (amt)
+        amt.addEventListener("input", (e) => {
+          d.amounts[i] = e.target.value;
+          refreshEditor();
+        });
     });
-  }
-
-  if (ui.showAddForm && ui.addSplitMode === "custom") {
-    wireShareInputs("new-share", "new-bill-total");
-  }
-  if (ui.editingBillId && (ui.editSplitMode || getSplitMode(state.bills.find((b) => b.id === ui.editingBillId) || {})) === "custom") {
-    wireShareInputs(`edit-share-${ui.editingBillId}`, `edit-total-${ui.editingBillId}`);
+    draftForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      commitDraft();
+    });
   }
 }
 
