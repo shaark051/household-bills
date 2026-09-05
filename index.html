@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bill Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #16241F;
+    --paper: #EEF0E7;
+    --paper-2: #E3E6D9;
+    --brass: #A9812E;
+    --rust: #B04A2F;
+    --sage: #7A8C7D;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    color: var(--ink);
+    background: var(--paper);
+  }
+  .bl-serif { font-family: 'Source Serif 4', Georgia, serif; }
+  .bl-container { max-width: 680px; margin: 0 auto; padding: 0 24px; }
+  .bl-header { background: var(--ink); color: var(--paper); padding: 28px 0; }
+  .bl-header h1 { font-size: 28px; font-weight: 700; margin: 0; }
+  .bl-people-row { margin-top: 8px; font-size: 13px; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .bl-person-btn { background: none; border: none; color: var(--paper); font-weight: 600; padding: 0; font-family: inherit; font-size: 13px; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; cursor: pointer; }
+  .bl-person-input { width: 70px; background: transparent; border: none; border-bottom: 1px solid var(--brass); color: var(--paper); font-family: inherit; font-size: 13px; padding: 0; }
+  .bl-tiny-icon-btn { background: none; border: 1px solid rgba(238,240,231,0.4); color: var(--paper); border-radius: 2px; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; font-family: inherit; font-size: 12px; line-height: 1; }
+  .bl-summary { border-bottom: 2px solid var(--ink); }
+  .bl-summary-row { display: flex; flex-wrap: wrap; }
+  .bl-summary-cell { flex: 1 1 200px; padding: 16px 24px 16px 0; }
+  .bl-summary-cell.bordered { border-right: 1px solid var(--ink); }
+  .bl-summary-label { font-size: 11px; color: var(--sage); }
+  .bl-summary-value { font-size: 26px; font-weight: 700; }
+  .bl-row { border-bottom: 1px dashed var(--sage); padding: 16px 0; }
+  .bl-row:hover { background: var(--paper-2); }
+  .bl-row-inner { display: flex; align-items: flex-start; gap: 12px; }
+  .bl-idx { font-size: 11px; color: var(--sage); padding-top: 4px; width: 26px; flex-shrink: 0; }
+  .bl-bill-main { flex: 1; min-width: 0; }
+  .bl-bill-title-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .bl-bill-name { font-size: 17px; font-weight: 600; }
+  .bl-bill-date { font-size: 12px; color: var(--sage); }
+  .bl-icon-ghost { background: none; border: none; color: var(--sage); cursor: pointer; padding: 2px; display: inline-flex; }
+  .bl-chips { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+  .bl-chip { border-radius: 3px; padding: 3px 8px; font-size: 11px; font-family: inherit; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: transform 0.12s ease; }
+  .bl-chip:hover { transform: translateY(-1px); }
+  .bl-chip.paid { border: 1px solid var(--brass); background: var(--brass); color: var(--paper); }
+  .bl-chip.unpaid { border: 1px solid var(--sage); background: transparent; color: var(--ink); }
+  .bl-chip.excluded { border: 1px dashed var(--sage); background: transparent; color: var(--sage); opacity: 0.55; text-decoration: line-through; }
+  .bl-amount-col { text-align: right; flex-shrink: 0; }
+  .bl-amount { font-size: 18px; font-weight: 700; }
+  .bl-share { font-size: 11px; color: var(--sage); margin-top: 2px; }
+  .bl-stamp-btn { margin-top: 10px; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 2px; background: none; letter-spacing: 1px; font-family: inherit; cursor: pointer; display: inline-block; }
+  .bl-stamp-btn.paid { border: 2px solid var(--brass); color: var(--brass); transform: rotate(-5deg); }
+  .bl-stamp-btn.unpaid { border: 2px solid var(--sage); color: var(--sage); }
+  .bl-delete-btn { display: block; margin-top: 10px; margin-left: auto; background: none; border: none; color: var(--rust); cursor: pointer; opacity: 0.65; padding: 0; font-size: 15px; }
+  .bl-input { font-family: inherit; background: var(--paper); border: 1px solid var(--sage); border-radius: 2px; padding: 6px 8px; font-size: 13px; color: var(--ink); }
+  .bl-input:focus, button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  .bl-small-btn { background: none; border: 1px solid var(--sage); border-radius: 2px; padding: 5px 7px; cursor: pointer; color: var(--ink); display: inline-flex; align-items: center; font-family: inherit; }
+  .bl-primary-btn { background: var(--ink); color: var(--paper); border: none; border-radius: 2px; padding: 8px 16px; font-family: inherit; font-size: 13px; cursor: pointer; }
+  .bl-ghost-btn { background: none; color: var(--sage); border: 1px solid var(--sage); border-radius: 2px; padding: 8px 16px; font-family: inherit; font-size: 13px; cursor: pointer; }
+  .bl-add-toggle { width: 100%; padding: 14px; border: 1px dashed var(--sage); background: none; color: var(--sage); font-family: inherit; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 2px; }
+  .bl-add-form { border: 1px solid var(--ink); padding: 16px; border-radius: 2px; }
+  .bl-add-form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bl-form-error { color: var(--rust); font-size: 12px; margin-top: 8px; }
+  .bl-empty { padding: 40px 0; text-align: center; color: var(--sage); font-size: 13px; }
+  .bl-status { font-size: 11px; color: var(--sage); text-align: center; padding: 10px 0 30px; }
+  .bl-status.warn { color: var(--rust); }
+  @media (max-width: 520px) {
+    .bl-container { padding: 0 16px; }
+    .bl-row-inner { flex-direction: column; }
+    .bl-amount-col { text-align: left; width: 100%; margin-top: 10px; }
+    .bl-delete-btn { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div style="display:flex; align-items:center; justify-content:center; min-height:300px; color: var(--sage); font-family:'IBM Plex Mono', monospace; font-size:13px;">
+    Connecting to ledger…
+  </div>
+</div>
+
+<script type="module">
+/* ============================================================
+   SETUP — read this before using
+   ============================================================
+   This app stores its data in a Firebase Realtime Database so
+   everyone in the household sees the same live data from their
+   own phone. You need your own free Firebase project:
+
+   1. Go to https://console.firebase.google.com and create a project.
+   2. In the project, go to Build > Realtime Database > Create Database.
+      Start in "test mode" (fine for a small private household app —
+      just don't share the URL publicly).
+   3. Go to Project settings (gear icon) > General > "Your apps" >
+      click the </> (web) icon to register a web app.
+   4. Copy the firebaseConfig object it gives you and paste it below,
+      replacing the placeholder values.
+   5. Save this file and open it — or upload it to any static host
+      (Netlify Drop, GitHub Pages, Vercel) so everyone can reach it
+      at a shared URL.
+   ============================================================ */
+
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyCuexcR7Fc-H-H2bOR6TnVcGQU5XS_OGnY",
+  authDomain: "bill-splitter-tracker.firebaseapp.com",
+  databaseURL: "https://bill-splitter-tracker-default-rtdb.firebaseio.com",
+  projectId: "bill-splitter-tracker",
+  storageBucket: "bill-splitter-tracker.firebasestorage.app",
+  messagingSenderId: "961216833885",
+  appId: "1:961216833885:web:d0d284e1d8e2b88d77a0b4",
+  measurementId: "G-HC2GWBNR0M"
+};
+
+const DATA_PATH = "billLedger";
+
+const DEFAULT_STATE = {
+  people: ["P1", "P2", "P3", "P4"],
+  bills: [
+    { id: "b1", date: "2026-08-08", name: "Internet", total: 79, vendorPaid: true, participants: [true, true, true, true], personPaid: [true, true, true, false] },
+    { id: "b2", date: "2026-08-24", name: "Electricity", total: 585.33, vendorPaid: false, participants: [true, true, true, true], personPaid: [false, false, false, false] },
+    { id: "b3", date: "", name: "Gas", total: 0, vendorPaid: false, participants: [true, true, true, true], personPaid: [false, false, false, false] }
+  ]
+};
+
+let state = null;
+let ui = { editingBillId: null, editingPersonIdx: null, showAddForm: false, formError: "", connected: false, usingFallback: false };
+
+function genId() {
+  return "b-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+}
+
+function fmt(n) {
+  const v = isNaN(n) ? 0 : n;
+  return "$" + v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDate(d) {
+  if (!d) return "TBD";
+  const dt = new Date(d + "T00:00:00");
+  if (isNaN(dt.getTime())) return d;
+  return dt.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
+}
+
+function shareOf(bill) {
+  const count = getParticipants(bill).filter(Boolean).length;
+  return count ? bill.total / count : 0;
+}
+
+function getParticipants(bill) {
+  return Array.isArray(bill.participants) ? bill.participants : bill.personPaid.map(() => true);
+}
+
+function computeTotals() {
+  const totalDue = state.bills.filter((b) => !b.vendorPaid).reduce((s, b) => s + b.total, 0);
+  const dueToReceive = state.bills.reduce((sum, b) => {
+    const share = shareOf(b);
+    const participants = getParticipants(b);
+    const unpaidCount = participants.filter((included, i) => included && !b.personPaid[i]).length;
+    return sum + share * unpaidCount;
+  }, 0);
+  return { totalDue, dueToReceive };
+}
+
+/* ---------- persistence layer ---------- */
+
+let dbRef = null;
+let fbSet = null;
+
+async function initFirebase() {
+  try {
+    const looksUnconfigured = !firebaseConfig.apiKey || firebaseConfig.apiKey.indexOf("YOUR_") === 0;
+    if (looksUnconfigured) throw new Error("Firebase not configured");
+
+    const { initializeApp } = await import("https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js");
+    const { getDatabase, ref, onValue, set } = await import("https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js");
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    dbRef = ref(db, DATA_PATH);
+    fbSet = set;
+
+    onValue(
+      dbRef,
+      (snapshot) => {
+        const val = snapshot.val();
+        ui.connected = true;
+        ui.usingFallback = false;
+        if (val && Array.isArray(val.people) && Array.isArray(val.bills)) {
+          state = val;
+        } else {
+          state = DEFAULT_STATE;
+          fbSet(dbRef, state);
+        }
+        render();
+      },
+      (err) => {
+        console.error("Firebase read failed:", err);
+        fallbackToLocal();
+      }
+    );
+  } catch (e) {
+    fallbackToLocal();
+  }
+}
+
+function fallbackToLocal() {
+  ui.connected = false;
+  ui.usingFallback = true;
+  try {
+    const raw = localStorage.getItem("bill-ledger-data");
+    state = raw ? JSON.parse(raw) : DEFAULT_STATE;
+  } catch (e) {
+    state = DEFAULT_STATE;
+  }
+  render();
+}
+
+function pushState(newState) {
+  state = newState;
+  if (dbRef && fbSet) {
+    fbSet(dbRef, state).catch((e) => console.error("Save failed:", e));
+  } else {
+    try {
+      localStorage.setItem("bill-ledger-data", JSON.stringify(state));
+    } catch (e) {
+      console.error("Local save failed:", e);
+    }
+  }
+  render();
+}
+
+/* ---------- actions ---------- */
+
+function addPerson() {
+  if (state.people.length >= 8) return;
+  pushState({
+    people: [...state.people, "P" + (state.people.length + 1)],
+    bills: state.bills.map((b) => ({
+      ...b,
+      participants: [...getParticipants(b), true],
+      personPaid: [...b.personPaid, false]
+    }))
+  });
+}
+
+function removePerson() {
+  if (state.people.length <= 1) return;
+  pushState({
+    people: state.people.slice(0, -1),
+    bills: state.bills.map((b) => ({
+      ...b,
+      participants: getParticipants(b).slice(0, -1),
+      personPaid: b.personPaid.slice(0, -1)
+    }))
+  });
+}
+
+function renamePerson(idx, name) {
+  const trimmed = (name || "").trim();
+  if (!trimmed) return;
+  pushState({
+    ...state,
+    people: state.people.map((n, i) => (i === idx ? trimmed : n))
+  });
+}
+
+function cyclePersonState(billId, idx) {
+  pushState({
+    ...state,
+    bills: state.bills.map((b) => {
+      if (b.id !== billId) return b;
+      const participants = getParticipants(b).slice();
+      const personPaid = b.personPaid.slice();
+      if (!participants[idx]) {
+        // not part of this bill -> include, unpaid
+        participants[idx] = true;
+        personPaid[idx] = false;
+      } else if (!personPaid[idx]) {
+        // included, unpaid -> included, paid
+        personPaid[idx] = true;
+      } else {
+        // included, paid -> exclude from this bill
+        participants[idx] = false;
+        personPaid[idx] = false;
+      }
+      return { ...b, participants, personPaid };
+    })
+  });
+}
+
+function toggleVendorPaid(billId) {
+  pushState({
+    ...state,
+    bills: state.bills.map((b) => (b.id === billId ? { ...b, vendorPaid: !b.vendorPaid } : b))
+  });
+}
+
+function deleteBill(billId) {
+  pushState({ ...state, bills: state.bills.filter((b) => b.id !== billId) });
+}
+
+function addBill(date, name, totalRaw) {
+  const total = parseFloat(totalRaw);
+  if (!name.trim() || isNaN(total) || total < 0) {
+    ui.formError = "Enter a bill name and a valid amount.";
+    render();
+    return;
+  }
+  ui.formError = "";
+  ui.showAddForm = false;
+  pushState({
+    ...state,
+    bills: [
+      ...state.bills,
+      { id: genId(), date, name: name.trim(), total, vendorPaid: false, participants: state.people.map(() => true), personPaid: state.people.map(() => false) }
+    ]
+  });
+}
+
+function saveEdit(id, date, name, totalRaw) {
+  const total = parseFloat(totalRaw);
+  pushState({
+    ...state,
+    bills: state.bills.map((b) =>
+      b.id === id ? { ...b, date, name: name.trim() || b.name, total: isNaN(total) ? b.total : total } : b
+    )
+  });
+  ui.editingBillId = null;
+}
+
+/* ---------- rendering ---------- */
+
+function render() {
+  const root = document.getElementById("app");
+  if (!state) return;
+  const { totalDue, dueToReceive } = computeTotals();
+
+  root.innerHTML = `
+    <div class="bl-header">
+      <div class="bl-container">
+        <h1 class="bl-serif">Bill Ledger</h1>
+        <div class="bl-people-row">
+          <span>Split between</span>
+          ${state.people.map((p, i) => renderPersonChip(p, i)).join('<span style="opacity:0.5">·</span>')}
+          <button class="bl-tiny-icon-btn" data-action="add-person" title="Add person">+</button>
+          ${state.people.length > 1 ? '<button class="bl-tiny-icon-btn" data-action="remove-person" title="Remove last person">&times;</button>' : ""}
+        </div>
+      </div>
+    </div>
+
+    <div class="bl-summary">
+      <div class="bl-container bl-summary-row">
+        <div class="bl-summary-cell bordered">
+          <div class="bl-summary-label">Total Due</div>
+          <div class="bl-serif bl-summary-value" style="color:${totalDue > 0 ? "var(--rust)" : "var(--ink)"}">${fmt(totalDue)}</div>
+        </div>
+        <div class="bl-summary-cell">
+          <div class="bl-summary-label">Due to Receive</div>
+          <div class="bl-serif bl-summary-value" style="color:${dueToReceive > 0 ? "var(--brass)" : "var(--ink)"}">${fmt(dueToReceive)}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bl-container" style="padding-top:8px; padding-bottom:8px;">
+      ${state.bills.length === 0 ? '<div class="bl-empty">No bills yet — add your first one below.</div>' : state.bills.map((b, idx) => renderBillRow(b, idx)).join("")}
+    </div>
+
+    <div class="bl-container" style="padding-bottom:16px; padding-top:8px;">
+      ${ui.showAddForm ? renderAddForm() : '<button class="bl-add-toggle" data-action="show-add-form">+ Add a bill</button>'}
+    </div>
+
+    <div class="bl-status ${ui.usingFallback ? "warn" : ""}">
+      ${ui.usingFallback ? "Not connected to a shared ledger — saving to this device only. Add your Firebase config in the file to sync across phones." : "Synced live across everyone with this link."}
+    </div>
+  `;
+
+  attachHandlers();
+}
+
+function renderPersonChip(p, i) {
+  if (ui.editingPersonIdx === i) {
+    return `<span><input class="bl-person-input" id="person-input-${i}" value="${escapeAttr(p)}" data-idx="${i}" /></span>`;
+  }
+  return `<span><button class="bl-person-btn" data-action="start-rename-person" data-idx="${i}">${escapeHtml(p)}</button></span>`;
+}
+
+function renderBillRow(b, idx) {
+  const share = shareOf(b);
+  const participants = getParticipants(b);
+  const participantCount = participants.filter(Boolean).length;
+  if (ui.editingBillId === b.id) {
+    return `
+      <div class="bl-row">
+        <div class="bl-row-inner">
+          <div class="bl-idx">${String(idx + 1).padStart(3, "0")}</div>
+          <div class="bl-bill-main">
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <input type="date" class="bl-input" id="edit-date-${b.id}" value="${escapeAttr(b.date)}" />
+              <input type="text" class="bl-input" id="edit-name-${b.id}" value="${escapeAttr(b.name)}" style="flex:1; min-width:120px;" placeholder="Bill name" />
+              <input type="number" step="0.01" class="bl-input" id="edit-total-${b.id}" value="${b.total}" style="width:90px;" placeholder="0.00" />
+              <button class="bl-small-btn" data-action="save-edit" data-bill-id="${b.id}" title="Save">✓</button>
+              <button class="bl-small-btn" data-action="cancel-edit" title="Cancel">&times;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  return `
+    <div class="bl-row">
+      <div class="bl-row-inner">
+        <div class="bl-idx">${String(idx + 1).padStart(3, "0")}</div>
+        <div class="bl-bill-main">
+          <div class="bl-bill-title-row">
+            <span class="bl-serif bl-bill-name">${escapeHtml(b.name)}</span>
+            <span class="bl-bill-date">${fmtDate(b.date)}</span>
+            <button class="bl-icon-ghost" data-action="start-edit" data-bill-id="${b.id}" title="Edit bill">✎</button>
+          </div>
+          <div class="bl-chips">
+            ${state.people
+              .map((p, i) => {
+                const included = participants[i];
+                const paid = b.personPaid[i];
+                const cls = !included ? "excluded" : paid ? "paid" : "unpaid";
+                const label = !included ? "− " : paid ? "✓ " : "";
+                const title = !included
+                  ? `${p} is not part of this bill — click to include`
+                  : `${p} has ${paid ? "paid" : "not paid"} their share — click to ${paid ? "leave out of this bill" : "mark paid"}`;
+                return `
+              <button class="bl-chip ${cls}" data-action="toggle-person" data-bill-id="${b.id}" data-person-idx="${i}" title="${escapeAttr(title)}">
+                ${label}${escapeHtml(p)}
+              </button>`;
+              })
+              .join("")}
+          </div>
+        </div>
+        <div class="bl-amount-col">
+          <div class="bl-serif bl-amount">${fmt(b.total)}</div>
+          <div class="bl-share">${fmt(share)} / person${participantCount !== state.people.length ? ` · ${participantCount} of ${state.people.length}` : ""}</div>
+          <button class="bl-stamp-btn ${b.vendorPaid ? "paid" : "unpaid"}" data-action="toggle-vendor" data-bill-id="${b.id}">${b.vendorPaid ? "PAID" : "UNPAID"}</button>
+          <button class="bl-delete-btn" data-action="delete-bill" data-bill-id="${b.id}" title="Delete bill">🗑</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAddForm() {
+  return `
+    <form class="bl-add-form" id="add-bill-form">
+      <div class="bl-add-form-row">
+        <input type="date" class="bl-input" id="new-bill-date" />
+        <input type="text" class="bl-input" id="new-bill-name" placeholder="Bill name" style="flex:1; min-width:140px;" required />
+        <input type="number" step="0.01" min="0" class="bl-input" id="new-bill-total" placeholder="0.00" style="width:100px;" required />
+      </div>
+      ${ui.formError ? `<div class="bl-form-error">${escapeHtml(ui.formError)}</div>` : ""}
+      <div style="display:flex; gap:8px; margin-top:12px;">
+        <button type="submit" class="bl-primary-btn">Add bill</button>
+        <button type="button" class="bl-ghost-btn" data-action="cancel-add-form">Cancel</button>
+      </div>
+    </form>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+}
+function escapeAttr(s) {
+  return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* ---------- event wiring ---------- */
+
+function attachHandlers() {
+  const root = document.getElementById("app");
+
+  root.querySelectorAll("[data-action]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      const action = el.getAttribute("data-action");
+      const billId = el.getAttribute("data-bill-id");
+      const idx = el.getAttribute("data-idx");
+      const personIdx = el.getAttribute("data-person-idx");
+
+      if (action === "add-person") addPerson();
+      else if (action === "remove-person") removePerson();
+      else if (action === "start-rename-person") {
+        ui.editingPersonIdx = Number(idx);
+        render();
+        const input = document.getElementById("person-input-" + idx);
+        if (input) {
+          input.focus();
+          input.select();
+        }
+      } else if (action === "toggle-person") cyclePersonState(billId, Number(personIdx));
+      else if (action === "toggle-vendor") toggleVendorPaid(billId);
+      else if (action === "delete-bill") {
+        if (confirm("Delete this bill?")) deleteBill(billId);
+      } else if (action === "start-edit") {
+        ui.editingBillId = billId;
+        render();
+      } else if (action === "cancel-edit") {
+        ui.editingBillId = null;
+        render();
+      } else if (action === "save-edit") {
+        const date = document.getElementById("edit-date-" + billId).value;
+        const name = document.getElementById("edit-name-" + billId).value;
+        const total = document.getElementById("edit-total-" + billId).value;
+        saveEdit(billId, date, name, total);
+      } else if (action === "show-add-form") {
+        ui.showAddForm = true;
+        ui.formError = "";
+        render();
+      } else if (action === "cancel-add-form") {
+        ui.showAddForm = false;
+        ui.formError = "";
+        render();
+      }
+    });
+  });
+
+  state.people.forEach((p, i) => {
+    if (ui.editingPersonIdx === i) {
+      const input = document.getElementById("person-input-" + i);
+      if (!input) return;
+      const commit = () => {
+        renamePerson(i, input.value);
+        ui.editingPersonIdx = null;
+      };
+      input.addEventListener("blur", commit);
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+        }
+        if (e.key === "Escape") {
+          ui.editingPersonIdx = null;
+          render();
+        }
+      });
+    }
+  });
+
+  const addForm = document.getElementById("add-bill-form");
+  if (addForm) {
+    addForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const date = document.getElementById("new-bill-date").value;
+      const name = document.getElementById("new-bill-name").value;
+      const total = document.getElementById("new-bill-total").value;
+      addBill(date, name, total);
+    });
+  }
+}
+
+initFirebase();
+</script>
+</body>
+</html>
